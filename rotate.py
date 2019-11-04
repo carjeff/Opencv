@@ -2,7 +2,6 @@
 import cv2
 import numpy as np
  
- 
 def rotate_bound(image, angle):
     # grab the dimensions of the image and then determine the
     # center
