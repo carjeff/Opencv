@@ -2,25 +2,11 @@ import cv2
 import numpy as np
 
 def zmMinFilterGray(src, r=3):
-    '''''最小值滤波，r是滤波器半径'''
+    '''最小值滤波，r是滤波器半径'''
     return cv2.erode(src, np.ones((2 * r - 1, 2 * r - 1)))
 
-
-# =============================================================================
-#     if r <= 0:
-#         return src
-#     h, w = src.shape[:2]
-#     I = src
-#     res = np.minimum(I  , I[[0]+range(h-1)  , :])
-#     res = np.minimum(res, I[range(1,h)+[h-1], :])
-#     I = res
-#     res = np.minimum(I  , I[:, [0]+range(w-1)])
-#     res = np.minimum(res, I[:, range(1,w)+[w-1]])
-# =============================================================================
-#   return zmMinFilterGray(res, r-1)
-
 def guidedfilter(I, p, r, eps): #guidance image: I (should be a gray-scale/single channel image)
-    '''''引导滤波，直接参考网上的matlab代码'''
+    '''引导滤波，直接参考网上的matlab代码'''
     height, width = I.shape
     m_I = cv2.boxFilter(I, -1, (r, r))
     m_p = cv2.boxFilter(p, -1, (r, r))
@@ -44,6 +30,7 @@ def getV1(m, r, eps, w, maxV1):  # 输入rgb图像，值范围[0,1]
     V1 = guidedfilter(V1, zmMinFilterGray(V1, 3), r, eps)  # 使用引导滤波优化
     bins = 2000
     ht = np.histogram(V1, bins)  # 计算大气光照A
+
     d = np.cumsum(ht[0]) / float(V1.size)
     for lmax in range(bins - 1, 0, -1):
         if d[lmax] <= 0.999:
@@ -55,14 +42,13 @@ def getV1(m, r, eps, w, maxV1):  # 输入rgb图像，值范围[0,1]
     return V1, A
 
 
-def deHaze(m, r=81, eps=0.001, w=0.95, maxV1=0.80, bGamma=False):
+def deHaze(m, r=81, eps=0.001, w=0.95, maxV1=0.80):
     Y = np.zeros(m.shape)
     V1, A = getV1(m, r, eps, w, maxV1)  # 得到遮罩图像和大气光照
     for k in range(3):
         Y[:, :, k] = (m[:, :, k] - V1) / (1 - V1 / A)  # 颜色校正
     Y = np.clip(Y, 0, 1)
-    if bGamma:
-        Y = Y ** (np.log(0.5) / np.log(Y.mean()))  # gamma校正,默认不进行该操作
+
     return Y
 
 
